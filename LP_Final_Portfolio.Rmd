@@ -1,0 +1,505 @@
+---
+title: "Final Portfolio"
+author: "Lance Peterson"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      results = 'hide',
+                      warning = FALSE,
+                      message=FALSE)
+```
+# Reflection
+In this final portfolio I have presented 4 graphs and 1 table to meet the requirements of the assignment. I have worked diligently throughout the semester to grow and improve my skills through the lecture, readings and valuable feedback given to me by yourself and my peers. Initially I struggled with concepts 4, 5 and 8 especially. Through the assignments and further studying I have improved at my weaknesses to grow as a data scientist. Even with all my improvements I still struggle with concept 11 sometimes, and knowing that you can always improve in every category is an important way to keep growing. However, I believe that I have mastered concepts 1, 2, 3, 4, 5, 6, 7, 9, 10, 12 and 13. Looking through my peers' visuals helped me be critical of my own self in a productive way as I am to my peers. 
+
+For the most part my prior assignments had small mistakes and errors. Such as not including code, using the wrong graph and colour issues. These kinds of mundane mistakes are in the past and I have created my plots to be better than any others I have created before. That is why I believe that I deserve and *A* because although my assignment plots were lacking in some cases (2, 4, 5, 8) I have grown and learned from my experiences to create better visualizations for my data.
+
+My portfolio plots are designed to specifically show mastery in the following criteria:
+
+*  Whole Portfolio - 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14
+*  1, a histogram plot - 1, 3, 4, 7, 10, 13 
+*  2, a table - 4, 5, 7, 8, 9, 14 
+*  3, a faceted plot - 2, 3, 5, 6, 7, 13
+*  4, a sanket diagram - 1, 2, 3, 4, 7, 14
+*  5, density diagram and bar plot - 1, 2, 3, 5, 7, 10, 13, 14
+
+\newpage
+
+### Question - 1:  
+How might the structure of this dataset this affect your ability to look at the changes in publication pattern over time?
+```{r plot1, fig.width=10, fig.height=6}
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(patchwork)
+library(gt)
+library(gtExtras)
+library(tidyr)
+library(ggsankey)
+
+#If you are using datasets from outside the class, you could provide links 
+#to them here, or in the discord, or in the text if you can 
+#find a good place to fit it. 
+
+#Datasets for table 2 and plot 3:
+#Hitters: https://www.fangraphs.com/leaders/major-league?pos=all&stats=bat&lg=al
+#l&type=8&ind=1&startdate=&enddate=&v_cr=202301&pageitems=30&season1=2021&season
+#=2026&qual=y&month=0
+#Pitchers: https://www.fangraphs.com/leaders/major-league?pos=all&stats=pit&lg=a
+#ll&type=8&ind=1&startdate=&enddate=&v_cr=202301&pageitems=30&season1=2021&seaso
+#n=2026&qual=y&month=0
+#Team: https://www.fangraphs.com/leaders/major-league?pos=all&stats=pit&lg=all&t
+#ype=8&ind=1&startdate=&enddate=&v_cr=202301&pageitems=30&season1=2021&season=20
+#26&qual=y&month=0&team=0%2Cts
+
+# Dataset for plots 5:
+# https://www.fangraphs.com/leaders/major-league?pos=all&stats=bat&lg=all&type=c
+#%2C4%2C6%2C11%2C12%2C13%2C21%2C23%2C34%2C35%2C37%2C38%2C40%2C41%2C50%2C61%2C111
+#%2C199%2C203%2C317%2C308%2C346%2C58&month=0&ind=1&startdate=&enddate=&v_cr=2023
+#01&sortcol=22&sortdir=default&pageitems=30&qual=5&season1=2024&season=2026&page
+#num=65
+# and
+# https://baseballsavant.mlb.com/statcast_search?hfGT=R%7C&hfPR=foul%7Cfoul%5C.%5
+#C.bunt%7Cbunt%5C.%5C.foul%5C.%5C.tip%7Cfoul%5C.%5C.pitchout%7Chit%5C.%5C.into%5
+#C.%5C.play%7Cmissed%5C.%5C.bunt%7Cfoul%5C.%5C.tip%7Cswinging%5C.%5C.pitchout%7C
+#swinging%5C.%5C.strike%7Cswinging%5C.%5C.strike%5C.%5C.blocked%7C&hfSea=2026%7C
+#2025%7C2024%7C&player_type=batter&batters_lookup%5B%5D=605141&group_by=name&sor
+#t_col=pitches&sort_order=desc#results
+
+# Using milk dataset that was utilized in my assignment 1 & 2
+# Load in data
+milk <- read.csv("MilkOligoDB.csv")
+# Each row does not represent a single study but rather an entry to a study
+NotControlled <- milk |> 
+  group_by(Year) |> 
+  tally()
+# Distinct between number of publications, using links to the the studies.
+Controlled <- milk |> 
+  group_by(Link, Year) |> 
+  tally() |> 
+  group_by(Year) |> 
+  tally()
+# Creation of single plot to show the difference in Counts
+milk1 <-  ggplot() +
+  geom_histogram(data = NotControlled, aes(x = Year, y = n), fill = "red",
+                 stat = "identity") +
+  geom_histogram(data = Controlled, aes(x = Year, y = n), fill = "blue",
+                 stat = "identity") +
+  labs(title = "Comparing Publication Count Between Raw Total vs Sorted by Link",
+       x = "Year",
+       y = "Publication Totals by") +
+  theme_minimal()
+# Creation of a plot to show the finer details of publication counts across years
+milk2 <- ggplot() +
+  geom_histogram(data = Controlled,
+              aes(x = Year, y = n),
+              fill = "blue",
+              stat = "identity") +
+  labs(title = "Publication on Milk Sugars by Year Sorted by Link",
+       x = "Year",
+       y = "Publication Count") +
+  scale_y_continuous(breaks = seq(0,14,3)) + #Fixed the y scale issue
+  theme_minimal()
+
+milk1/milk2
+```
+
+**Plot 1** - Here you can see the issue with the data. In the first graph you can see that the raw numbers say there are hundreds of publications on milk sugars a year. While the small blue, which is sorted by links to the publications, are much smaller. You can see even clearer in the second one that the trend is different than just the raw numbers in both distribution and pure numbers.
+
+\newpage
+
+### Question - 2:  
+How has the NL West preformed as a whole the past five years?
+```{r plot2, results = "show"}
+# Load in
+hitters <- read.csv("qualified_hitters.csv")
+pitchers <- read.csv("qualified_pitchers.csv")
+teams <- read.csv("team_data.csv")
+
+# filter to nl_teams
+nl_teams <- teams |> 
+  filter(Team %in% c("LAD", "ARI", "SFG", "SDP", "COL")) |> 
+  select("Season", "Team","W","ERA", "HR")
+
+# Filter to nl_teams and those who were on one or more nl_team
+filtered_pitch <- pitchers |> 
+  filter(Team %in% c("LAD", "ARI", "SFG", "SDP", "COL", "- - -")) |> 
+  filter(Name %in% c("Robbie Ray", "Merrill Kelly", "Jack Flaherty", "Lance Lynn",
+                     "Max Scherzer") | 
+           Team %in% c("LAD", "ARI", "SFG", "SDP", "COL"))
+
+# Filter to nl_teams and those who were on one or more nl_team
+filtered_hit <- hitters |> 
+  filter(Team %in% c("LAD", "ARI", "SFG", "SDP", "COL", "- - -")) |>
+  filter(Name %in% c("Eduardo Escobar", "Adam Frazier", "Kris Bryant",
+                     "Trea Turner", "Brandon Drury", "Josh Bell", "	Luke Voit",
+                     "Juan Soto", "	Enrique Hernández", "Jurickson Profar",
+                     "Amed Rosario", "Jorge Soler", "Luis Arraez",
+                     "Eugenio Suárez", "Mike Yastrzemski", "Ryan McMahon",
+                     "Ryan O'Hearn", "Rafael Devers", "Josh Naylor") |
+           Team %in% c("LAD", "ARI", "SFG", "SDP", "COL")) |> 
+  subset(!(Name %in% c("Jorge Soler", "Josh Bell") &
+             Season %in% c("2021", "2023"))) # Soler and Bell both came/left a
+#team more than once meaning specific years had to be kept and deleted
+
+# In order to specifically pick out each of the names above, I had to search
+#through each player listed with 2 (or more) teams to find if one of them was
+#an NL team
+
+# Relabel each two teamer to proper team, note that if they played for two teams
+#and both were nl teams the team with the larger amount of playing time was the
+#one chosen as their team for that year
+filtered_hit[filtered_hit$Name == "Eduardo Escobar", "Team"] <- "ARI"
+filtered_hit[filtered_hit$Name == "Adam Frazier", "Team"] <- "SDP"
+filtered_hit[filtered_hit$Name == "Kris Bryant", "Team"] <- "SFG"
+filtered_hit[filtered_hit$Name == "Trea Turner", "Team"] <- "LAD"
+filtered_hit[filtered_hit$Name == "Brandon Drury", "Team"] <- "SDP"
+filtered_hit[filtered_hit$Name == "Luke Voit", "Team"] <- "SDP"
+filtered_hit[filtered_hit$Name == "Juan Soto", "Team"] <- "SDP"
+filtered_hit[filtered_hit$Name == "Enrique Hernández", "Team"] <- "LAD"
+filtered_hit[filtered_hit$Name == "Jurickson Profar", "Team"] <- "COL"
+filtered_hit[filtered_hit$Name == "Amed Rosario", "Team"] <- "LAD"
+filtered_hit[filtered_hit$Name == "Jorge Soler", "Team"] <- "SFG"
+filtered_hit["14", "Team"] <- "SDP" # Luis Arreaz to the Padres
+filtered_hit["21", "Team"] <- "SFG" # Luis Arreaz from Giants to Phillies
+filtered_hit["7", "Team"] <- "SDP" # Josh Bell to Padres
+filtered_hit["12", "Team"] <- "ARI" # Josh Bell to Arizona
+filtered_hit[filtered_hit$Name == "Mike Yastrzemski", "Team"] <- "SFG"
+filtered_hit[filtered_hit$Name == "Ryan McMahon", "Team"] <- "COL"
+filtered_hit[filtered_hit$Name == "Ryan O'Hearn", "Team"] <- "SDP"
+filtered_hit[filtered_hit$Name == "Rafael Devers", "Team"] <- "SFG"
+filtered_hit[filtered_hit$Name == "Josh Naylor", "Team"] <- "ARI"
+filtered_hit[filtered_hit$Name == "Eugenio Suárez", "Team"] <- "ARI"
+filtered_pitch[filtered_pitch$Name == "Robbie Ray", "Team"] <- "SFG"
+
+# Onto pitchers
+filtered_pitch[filtered_pitch$Name == "Merrill Kelly", "Team"] <- "ARI"
+filtered_pitch[filtered_pitch$Name == "Jack Flaherty", "Team"] <- "LAD"
+filtered_pitch[filtered_pitch$Name == "Lance Lynn", "Team"] <- "LAD"
+filtered_pitch[filtered_pitch$Name == "Max Scherzer", "Team"] <- "LAD"
+
+# Now to combine the qualified hitters to their respective teams and seasons,
+#with relevant stats
+grouped_hit <- filtered_hit |> 
+  group_by(Team, Season) |> 
+  summarize(wRC. = round(mean(wRC.), digits = 0),
+            hWAR = round(mean(WAR), digits = 2),
+            Def = round(mean(Def),digits = 3),
+            wOBA = round(mean(wOBA), digits = 3)
+  )
+
+# Same but for pitchers
+grouped_pitch <- filtered_pitch |> 
+  group_by(Team, Season) |> 
+  summarize(K.9 = round(mean(K.9), digits = 3),
+            BB.9 = round(mean(BB.9), digits = 3),
+            FIP = round(mean(FIP), digits = 2),
+            pWAR = round(mean(WAR), digits = 2)
+  )
+# Round team ERA so not so long
+nl_teams <- nl_teams |> 
+  mutate(across("ERA", round, 2))
+
+# Combine arrgirated pitchers & hitters by there respective teams & seasons
+step <- merge(grouped_hit, grouped_pitch, by = c("Team", "Season"), all = T)
+# Now take that merged one and put it with some team data
+table <- merge(step, nl_teams, by = c("Team", "Season"), all = T)
+# Creating the table
+table |> gt(rowname_col = "Team",
+            groupname_col = "Season",
+            row_group_as_column = T) |> 
+  cols_align(align = "left",
+             columns = c(wRC., hWAR, Def, wOBA, K.9,
+                         BB.9, FIP, pWAR, HR, W, ERA)) |> # left align numbers
+  gt_highlight_cols(W, fill = "dodgerblue", alpha = .6) |> 
+  gt_highlight_cols(K.9, fill = "red", alpha = .4) |> 
+  gt_highlight_cols(wRC., fill = "green", alpha = .4) |> 
+  # Highlighted important stats like strikeouts per nine, wins, and wRC+
+  tab_spanner(label = "Qualified Hitters",
+              columns = c("wRC.","hWAR", "Def", "wOBA")) |> 
+  tab_spanner(label = "Qualified Pitchers",
+              columns = c("K.9", "BB.9", "FIP", "pWAR")) |>
+  tab_spanner(label = "Entire Team", columns = c("HR", "W", "ERA")) |> 
+  # Spanners to help keep track of
+  tab_style(style = cell_borders(sides = "top",
+                                 weight = px(2)),
+            locations = cells_body(rows = c(1, 6, 2, 3, 4, 5))) |> 
+  tab_style(style = cell_borders(sides = "left",
+                                weight = px(2)),
+            locations = cells_body(columns = 3)) |> 
+  tab_style(style = cell_borders(sides = "right",
+                                weight = px(2)),
+            locations = cells_body(columns = c(6, 10))) |> 
+  # Lines for clarification and reduce cofnitive load
+  tab_header(title = "Qualified Pitchers & Hitters in the NL West")
+
+# The presence of NA values is due to not all teams having a pitcher who 
+#qualified which is 
+```
+**Table 1** - In the table you can see that the NL west has been pretty good in the last couple years by wins. Other important metrics that help show how good qualified players are on their teams can be seen in green and red across the years.
+
+
+*Table Notes:*
+
+*  wRC+ (green) is a measure of how good a team is at scoring runs 
+*  K.9 (red) is K per nine which is how many strikes you would expect a team to get in a full 9 inning game
+*  Wins (blue) are the essence of what a team needs to do to reach the playoffs, 81 wins is .500, 100 wins is really good!
+
+\newpage
+
+### Question - 3:  
+Using the same data from before what are some stats that can correlate with winning?
+```{r plot3, fig.width=10, fig.height=8}
+# Get past data and get rid of all players with 2 teams because it would be way
+#too much to do all of them, but since it is the whole league they should be okay
+#without them in there
+all_grouped_hit <- hitters |> 
+  filter(Team != "- - -") |> 
+  group_by(Team, Season) |> 
+  summarize(wRC. = round(mean(wRC.)),
+            hWAR = round(mean(WAR), digits = 2),
+            Def = round(mean(Def),digits = 3),
+            wOBA = round(mean(wOBA), digits = 3)
+  )
+# Same idea for pitching
+all_grouped_pitch <- pitchers |> 
+  filter(Team != "- - -") |> 
+  group_by(Team, Season) |> 
+  summarize(K.9 = round(mean(K.9), digits = 3),
+            BB.9 = round(mean(BB.9), digits = 3),
+            FIP = round(mean(FIP), digits = 2),
+            pWAR = round(mean(WAR), digits = 2)
+  )
+# Same thing as last time for teams but now all league teams
+all_teams <- teams |> 
+  mutate(across("ERA", round, 2))
+
+# Combine pitching and hitting
+pitch_hit <- merge(all_grouped_hit,
+                   all_grouped_pitch,
+                   by = c("Team", "Season"), all = T)
+# Then pitching & hitting with team numbers
+stats <- merge(pitch_hit, teams, by = c("Team", "Season"), all = T)
+
+# Creating the leagues for which each team is in
+stats <- stats |> 
+  mutate(Division = ifelse(Team %in% c("NYY", "TOR", "BAL", "BOS", "TBR"),
+                                       "AL East",
+                    ifelse(Team %in% c("CLE", "DET", "KCR", "MIN", "CHW"),
+                                  "AL Central",
+                    ifelse(Team %in% c("LAA", "SEA", "HOU", "TEX", "ATH", "OAK"),
+      # Both ATH and OAK included as they are the same team different locations
+                           "AL West", 
+                    ifelse(Team %in% c("ATL", "PHI", "MIA", "WSN", "NYM"),
+                           "NL East",
+                    ifelse(Team %in% c("STL", "MIL", "PIT", "CHC", "CIN"),
+                           "NL Central",
+                           "NL West"
+                           ))))))
+# Make into long form data
+stats <- stats |> 
+  melt(id.vars = c("Team", "W", "Season", "Division"))
+# Selecting only four outputs as otherwise there are too many
+stats <- stats[(stats$variable == "wRC." |
+           stats$variable == "K.9" |
+           stats$variable == "wOBA" |
+           stats$variable == "ERA"),]
+# Creating scatterplots with linear models to show idea of correlation 
+ggplot(data = stats, aes(x = W, colour = Division, y = value)) +
+  geom_point() +
+  geom_smooth(aes(colour = NULL), method = "lm") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "",
+       x = "Wins",
+       y = "Variable") +
+  scale_colour_manual(values = c("firebrick", "purple", "green",
+                                 "yellow", "orange", "dodgerblue")) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+# As mentioned in the other plot the NA values from some teams are because all
+#of their players did not qualify in a particular year in either pitching or
+#hitting
+# Also should be mentioned again is that players that were traded or played for
+#two teams were excluded, there presences likely wouldn't have affected results
+```
+
+**Plot 3** - A faceted scatterplot that shows how things like a low ERA and high wRC correlate very heavily with winning. Based on these graphs it seems like the divisions are pretty clumped together when it comes to the different qualified players performance in these four metrics.
+
+\newpage
+
+### Question - 4:  
+How do the top 10 detailed occupation break down for both total fatalities and each kind of fatality? 
+```{r plot4, fig.width=10, fig.height=8}
+# Load in Dangerous Job data from assignment 5
+df4 <- read.csv("Dangerous Jobs.csv")
+# As stated by the Meta data there are many repeat observations, unsure how to 
+#handle
+# First thought is to see how many duplicate values 
+sum(duplicated(df4))
+# Oh my gosh so many duplicate values
+df4 <- distinct(df4)
+sum(is.na(df4$Fatalities))
+# Lots of NA values but that is probably fine, if not I'll fix it when it comes
+#up
+# My proposed question is "How does each detailed occupation break down for both
+#total fatalities and each kind of fatality"?
+# Does mean that I have to get rid of NA values for that so we shall see what 
+#that looks like
+df4 <- df4 |> 
+  filter(!is.na(df4$Fatalities))
+# What if we just get rid of all NA because just easier for Sankey as well
+df4 <- df4 |> 
+  na.omit(df4)
+# Still has 15k so were gonna roll with it for now
+unique(df4$NAICS)
+# Looking at the causes of death lots of total.fatalities could be that each
+#fatality type add up for each year for each
+check <- df4 |> 
+  filter(NAICS == 1111, Cause != "Total.Fatalities") |> 
+  group_by(Year) |> 
+  summarize(total = sum(Fatalities))
+# Seems possible, did some digging of grouping by year and NAICS code to see if
+#the totals of non total.fatalities added up to total.fatalities, seems very
+#likely that is the case so we will filter them out going forward
+
+# Wanting to see fatality breakdown by occupation
+sankey2 <- df4 |> 
+  filter(Cause != "Total.Fatalities") |> 
+  group_by(DetailedOccupation) |> 
+  summarize(nFatal = sum(Fatalities)) |> 
+  arrange(-nFatal)
+# That's a lot of occupations, too many to decipher, so I feel like I should
+#narrow it down a bit so maybe top 10 by fatality total
+
+# I like sankey diagrams so that's what we gonna role with
+link <- df4 |> 
+  filter(Cause != "Total.Fatalities",
+         DetailedOccupation == c("Specialty Trade Contractors",
+                              "Truck Transportation",
+                              "Administrative And Support Services",
+                              "General Freight Trucking",
+                              "General Freight Trucking, Long-Distance",
+                              "Residential Building Construction",
+                              "Restaurants And Other Eating Places",
+                              "Support Activities For Mining",
+                              "Services To Buildings And Dwellings",
+                              "Justice, Public Order, And Safety Activities"))
+# Filtered out the total.fatalities as I believe they are just the total for each
+#NAICS code. Picked these detailed occupation as they are the top ten in total
+#fatalities
+
+# Creating first part of sank
+sank <- link |> 
+  group_by(DetailedOccupation, Cause) |> 
+  tally(Fatalities, name = "n") # Important to ensure it counts Fatality numbers
+
+# The data is summarized data so had to create a connection for every fatality
+report <- sank |> 
+  slice(rep(1:n(), times = n)) |> 
+  ungroup()
+
+# Make the data long
+long <- report |> 
+  make_long(DetailedOccupation, Cause)
+
+# Using ggplot and ggsankey to create the sankey diagram
+ggplot(data = long, aes(x = x,                        
+                     next_x = next_x,                                     
+                     node = node,
+                     next_node = next_node,        
+                     fill = factor(node))) +
+              geom_sankey(alpha = .7, smooth = 10) + #adding some smooth and 
+  #clearness
+  geom_sankey_label(aes(label = node)) +
+  theme_void() +
+  theme(legend.position = "none") #No legend because they are labeled already
+```
+
+**Plot 4** - Top ten occupations by total fatalities broken down by each kind of fatality. We can see that the most fatalities come from the Transportation incidents. We can see that for many of the occupations the majority of their fatalities stem from those Transportation incidents.
+
+\newpage
+
+### Question - 5:  
+A) How has bat speed changed from 2025 to 2026 for the Los Angeles Dodgers?
+B) How has Mookie Betts done in the past couple years respective to the zone the ball was thrown in?
+```{r plot5, fig.width=10, fig.height=6}
+# Loading data and getting rid of any bat speeds that aren't there, it is pitch
+#by pitch data for dodger players, on swing events, from 2025 and 2026
+bat_tracking <- read.csv("savant_data.csv")
+bat_tracking <- bat_tracking |> 
+  filter(!is.na(bat_speed))
+
+# Help from:
+#https://www.datanovia.com/learn/data-visualization/ggplot2/density-plot
+ggplot(data = bat_tracking, aes(x = bat_speed,
+                                fill = factor(game_year),
+                                group = game_year)) +
+  geom_density(alpha = .4) +
+  geom_vline(xintercept = mean(bat_tracking$bat_speed)) +
+  geom_text(x = 50,
+            y = .08,
+            label = "mean bat speed across both years; 69.45 mph",
+            size = 4) +
+  scale_colour_viridis_d() +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(title = "A - 2025 Dodgers vs 2026 Dodgers Bat Speed",
+       x = "Bat Speed",
+       y = "Density",
+       fill = "Season")
+
+# Loaded in mookie data which is specifically Mookie Betts swing data for 2023
+#through 2026
+mookie <- read.csv("mookie.csv")
+mookie <- mookie |> 
+  filter(!is.na(bat_speed), !is.na(launch_speed_angle)) |>  #light clean up
+  mutate(barrel = ifelse(launch_speed_angle == 6, 1, 0)) |> 
+  group_by(zone) |> # Part of Strike Zone for reference see website listed below
+  summarize(barrel_per = mean(barrel) * 100,
+            speed = mean(bat_speed),
+            xwOBA = round(mean(estimated_woba_using_speedangle), digits = 3)
+            )
+
+# Wanted to create something new to explore relationships between zone,
+#bat speed and xwOBA/Barrel Rate
+ggplot(data = mookie, aes(x = zone, y = speed, fill = barrel_per))+
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = max(mookie)) +
+  geom_text(x = 10, y = 73.5,
+            label = "max average bat speed = 71.46 mph",
+            size = 4) +
+  scale_fill_gradient(low = "dodgerblue", high = "red") +
+  scale_x_continuous(breaks = seq(0,15,1)) + #Explict zone showing
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(title = "B - How Mookie Betts Fairs Againts Different Zones",
+       x = "Zone",
+       y = "Bat Speed",
+       fill = "Barrel Percentage")
+
+# Zone according to baseball savant:
+#https://baseballsavant.mlb.com/csv-docs
+# Under "zone"
+```
+
+**Plot 5** - A: The distribution of swing speeds for the Dodgers seems to have stayed relatively the same for both 2025 and 2026, with a greater concentration of the speed coming at around the median. B: Mookie seems to swing just as hard no matter where the pitch is located, but the best results of those swings come in zones 4 and 5 which are near the heart and in the heart of the plate respectively.
+
+\newpage
+# Code Output
+
+```{r plot1, eval = FALSE, echo = TRUE, fig.show = "hide"}
+```
+
+```{r plot2, eval = FALSE, echo = TRUE, fig.show = "hide"}
+```
+
+```{r plot3, eval = FALSE, echo = TRUE, fig.show = "hide"}
+```
+
+```{r plot4, eval = FALSE, echo = TRUE, fig.show = "hide"}
+```
+
+```{r plot5, eval = FALSE, echo = TRUE, fig.show = "hide"}
+```
